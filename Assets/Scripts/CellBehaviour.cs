@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using Unity.VisualScripting.Dependencies.NCalc;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
@@ -20,7 +21,10 @@ public class CellBehaviour : MonoBehaviour
     {
         isRevealed = false; 
         isFlagged = false;
+        timer = 0.0f;
     }
+
+    public static float timer;
 
     public void OnMouseOver()
     {
@@ -28,6 +32,12 @@ public class CellBehaviour : MonoBehaviour
         {
             if(!isFlagged)
             {
+                if(Time.time - timer < 0.2f)
+                {
+                    RevealNeighboursAndCheck();
+                }
+                timer = Time.time;
+
                 if (this.isMine)
                 {
                     Debug.Log("GAME OVER");
@@ -68,23 +78,61 @@ public class CellBehaviour : MonoBehaviour
 
     public void RevealCell()
     {
-        this.transform.GetChild(0).GetComponent<SpriteRenderer>().color = new Color(0.6f, 0.6f, 0.6f);
-        if (value != 0)
+        if(!isFlagged)
         {
-            this.transform.GetChild(1).gameObject.SetActive(true);
-            this.transform.GetChild(1).GetComponent<SpriteRenderer>().sprite = Resources.Load<Sprite>("Sprites/num" + value.ToString());
-        }
-        
-        if (!isRevealed)
-        {
-            isRevealed = true;
-            MainManager.score += 1;
-            if (MainManager.score >= MainManager.length * MainManager.height - MainManager.nbMine)
+            this.transform.GetChild(0).GetComponent<SpriteRenderer>().color = new Color(0.6f, 0.6f, 0.6f);
+            if (value != 0)
             {
-                Debug.Log("You Win ! Congratulation !");
+                this.transform.GetChild(1).gameObject.SetActive(true);
+                this.transform.GetChild(1).GetComponent<SpriteRenderer>().sprite = Resources.Load<Sprite>("Sprites/num" + value.ToString());
+            }
+
+            if (!isRevealed)
+            {
+                isRevealed = true;
+                MainManager.score += 1;
+                if (MainManager.score >= MainManager.length * MainManager.height - MainManager.nbMine)
+                {
+                    Debug.Log("You Win ! Congratulation !");
+                }
             }
         }
     }
+
+    public void RevealNeighboursAndCheck()
+    {
+        int neighFlag = 0;
+        bool mineNotFlagged = false;
+        List<CellBehaviour> neighbours = GetNeighbours();
+        foreach(CellBehaviour neighbour in neighbours)
+        {
+            neighFlag += (neighbour.IsFlagged() ? 1 : 0);
+            if(!neighbour.IsFlagged() && neighbour.isMine)
+            {
+                mineNotFlagged = true;
+            }
+        }
+
+        if (neighFlag >= value)
+        {
+            if(mineNotFlagged)
+            {
+                MainManager.ShowAllMines();
+            }
+            else
+            {
+                foreach (CellBehaviour neighbour in neighbours)
+                {
+                    if (!neighbour.IsFlagged())
+                    {
+                        neighbour.RevealCell();
+                        neighbour.CheckCellsForReveal();
+                    }
+                }
+            }
+        }
+    }
+
 
     public void CheckCellsForReveal()
     {
@@ -98,8 +146,22 @@ public class CellBehaviour : MonoBehaviour
             int cl = stackCells[0] / MainManager.height;
             int ln = stackCells[0] % MainManager.height;
             stackCells.RemoveAt(0);
-            
-            int newIndex;
+
+            if (MainManager.cells[cl][ln].GetComponent<CellBehaviour>().value == 0)
+            {
+                List<CellBehaviour> neighbours = MainManager.cells[cl][ln].GetComponent<CellBehaviour>().GetNeighbours();
+
+                foreach (CellBehaviour neighbour in neighbours)
+                {
+                    if (!connexCells.Contains(neighbour.column * MainManager.height + neighbour.line))
+                    {
+                        stackCells.Add(neighbour.column * MainManager.height + neighbour.line);
+                        connexCells.Add(neighbour.column * MainManager.height + neighbour.line);
+                    }
+                }
+            }
+
+            /*int newIndex;
             if (MainManager.cells[cl][ln].GetComponent<CellBehaviour>().value == 0)
             {
                 if (cl < MainManager.length - 1)
@@ -177,7 +239,7 @@ public class CellBehaviour : MonoBehaviour
                         connexCells.Add(newIndex);
                     }
                 }
-            }
+            }*/
         }
 
         for(int i = 0; i< connexCells.Count; i++)
@@ -186,6 +248,44 @@ public class CellBehaviour : MonoBehaviour
             int ln = connexCells[i] % MainManager.height;
             MainManager.cells[cl][ln].GetComponent<CellBehaviour>().RevealCell();
         }
+    }
+
+    public List<CellBehaviour> GetNeighbours()
+    {
+        List<CellBehaviour> list = new List<CellBehaviour>();
+        if (column < MainManager.length - 1)
+        {
+            list.Add(MainManager.cells[column + 1][line].GetComponent<CellBehaviour>());
+            if (line < MainManager.height - 1)
+            {
+                list.Add(MainManager.cells[column + 1][line + 1].GetComponent<CellBehaviour>());
+            }
+            if (line > 0)
+            {
+                list.Add(MainManager.cells[column + 1][line - 1].GetComponent<CellBehaviour>());
+            }
+        }
+        if (column > 0)
+        {
+            list.Add(MainManager.cells[column - 1][line].GetComponent<CellBehaviour>());
+            if (line < MainManager.height - 1)
+            {
+                list.Add(MainManager.cells[column - 1][line + 1].GetComponent<CellBehaviour>());
+            }
+            if (line > 0)
+            {
+                list.Add(MainManager.cells[column - 1][line - 1].GetComponent<CellBehaviour>());
+            }
+        }
+        if (line < MainManager.height - 1)
+        {
+            list.Add(MainManager.cells[column][line + 1].GetComponent<CellBehaviour>());
+        }
+        if (line > 0)
+        {
+            list.Add(MainManager.cells[column][line - 1].GetComponent<CellBehaviour>());
+        }
+        return list;
     }
 
     public bool IsFlagged()

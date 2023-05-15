@@ -41,7 +41,7 @@ public class CellBehaviour : MonoBehaviour
                 if (this.isMine)
                 {
                     Debug.Log("GAME OVER");
-                    MainManager.ShowAllMines();
+                    MainManager.Instance.ShowAllMines();
                 }
                 else
                 {
@@ -90,8 +90,8 @@ public class CellBehaviour : MonoBehaviour
             if (!isRevealed)
             {
                 isRevealed = true;
-                MainManager.score += 1;
-                if (MainManager.score >= MainManager.length * MainManager.height - MainManager.nbMine)
+                MainManager.Instance.score += 1;
+                if (MainManager.Instance.score >= MainManager.Instance.length * MainManager.Instance.height - MainManager.Instance.nbMine)
                 {
                     Debug.Log("You Win ! Congratulation !");
                 }
@@ -117,7 +117,7 @@ public class CellBehaviour : MonoBehaviour
         {
             if(mineNotFlagged)
             {
-                MainManager.ShowAllMines();
+                MainManager.Instance.ShowAllMines();
             }
             else
             {
@@ -139,24 +139,24 @@ public class CellBehaviour : MonoBehaviour
         List<int> connexCells = new List<int>();
         List<int> stackCells = new List<int>();
 
-        stackCells.Add(column * MainManager.height + line);
+        stackCells.Add(column * MainManager.Instance.height + line);
 
         while (stackCells.Count > 0)
         {
-            int cl = stackCells[0] / MainManager.height;
-            int ln = stackCells[0] % MainManager.height;
+            int cl = stackCells[0] / MainManager.Instance.height;
+            int ln = stackCells[0] % MainManager.Instance.height;
             stackCells.RemoveAt(0);
 
-            if (MainManager.cells[cl][ln].GetComponent<CellBehaviour>().value == 0)
+            if (MainManager.Instance.cells[cl][ln].GetComponent<CellBehaviour>().value == 0)
             {
-                List<CellBehaviour> neighbours = MainManager.cells[cl][ln].GetComponent<CellBehaviour>().GetNeighbours();
+                List<CellBehaviour> neighbours = MainManager.Instance.cells[cl][ln].GetComponent<CellBehaviour>().GetNeighbours();
 
                 foreach (CellBehaviour neighbour in neighbours)
                 {
-                    if (!connexCells.Contains(neighbour.column * MainManager.height + neighbour.line))
+                    if (!connexCells.Contains(neighbour.column * MainManager.Instance.height + neighbour.line))
                     {
-                        stackCells.Add(neighbour.column * MainManager.height + neighbour.line);
-                        connexCells.Add(neighbour.column * MainManager.height + neighbour.line);
+                        stackCells.Add(neighbour.column * MainManager.Instance.height + neighbour.line);
+                        connexCells.Add(neighbour.column * MainManager.Instance.height + neighbour.line);
                     }
                 }
             }
@@ -244,46 +244,46 @@ public class CellBehaviour : MonoBehaviour
 
         for(int i = 0; i< connexCells.Count; i++)
         {
-            int cl = connexCells[i] / MainManager.height;
-            int ln = connexCells[i] % MainManager.height;
-            MainManager.cells[cl][ln].GetComponent<CellBehaviour>().RevealCell();
+            int cl = connexCells[i] / MainManager.Instance.height;
+            int ln = connexCells[i] % MainManager.Instance.height;
+            MainManager.Instance.cells[cl][ln].GetComponent<CellBehaviour>().RevealCell();
         }
     }
 
     public List<CellBehaviour> GetNeighbours()
     {
         List<CellBehaviour> list = new List<CellBehaviour>();
-        if (column < MainManager.length - 1)
+        if (column < MainManager.Instance.length - 1)
         {
-            list.Add(MainManager.cells[column + 1][line].GetComponent<CellBehaviour>());
-            if (line < MainManager.height - 1)
+            list.Add(MainManager.Instance.cells[column + 1][line].GetComponent<CellBehaviour>());
+            if (line < MainManager.Instance.height - 1)
             {
-                list.Add(MainManager.cells[column + 1][line + 1].GetComponent<CellBehaviour>());
+                list.Add(MainManager.Instance.cells[column + 1][line + 1].GetComponent<CellBehaviour>());
             }
             if (line > 0)
             {
-                list.Add(MainManager.cells[column + 1][line - 1].GetComponent<CellBehaviour>());
+                list.Add(MainManager.Instance.cells[column + 1][line - 1].GetComponent<CellBehaviour>());
             }
         }
         if (column > 0)
         {
-            list.Add(MainManager.cells[column - 1][line].GetComponent<CellBehaviour>());
-            if (line < MainManager.height - 1)
+            list.Add(MainManager.Instance.cells[column - 1][line].GetComponent<CellBehaviour>());
+            if (line < MainManager.Instance.height - 1)
             {
-                list.Add(MainManager.cells[column - 1][line + 1].GetComponent<CellBehaviour>());
+                list.Add(MainManager.Instance.cells[column - 1][line + 1].GetComponent<CellBehaviour>());
             }
             if (line > 0)
             {
-                list.Add(MainManager.cells[column - 1][line - 1].GetComponent<CellBehaviour>());
+                list.Add(MainManager.Instance.cells[column - 1][line - 1].GetComponent<CellBehaviour>());
             }
         }
-        if (line < MainManager.height - 1)
+        if (line < MainManager.Instance.height - 1)
         {
-            list.Add(MainManager.cells[column][line + 1].GetComponent<CellBehaviour>());
+            list.Add(MainManager.Instance.cells[column][line + 1].GetComponent<CellBehaviour>());
         }
         if (line > 0)
         {
-            list.Add(MainManager.cells[column][line - 1].GetComponent<CellBehaviour>());
+            list.Add(MainManager.Instance.cells[column][line - 1].GetComponent<CellBehaviour>());
         }
         return list;
     }

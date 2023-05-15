@@ -5,36 +5,64 @@ using UnityEngine;
 
 public class MainManager : MonoBehaviour
 {
-    public static int length;
-    public static int height;
-    public static int nbMine;
-    public static int score;
+    public static MainManager Instance;
 
-    public static List<List<GameObject>> cells;
+    public int length;
+    public int height;
+    public int nbMine;
+    public int score;
 
     public GameObject cellPrefab;
     public GameObject gamePanel;
 
-    private static List<int> mineIndex = new List<int>();
+    public List<List<GameObject>> cells;
+    private List<int> mineIndex;
+
+    private void Awake()
+    {
+        if(Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Debug.LogError("Instance already exists !");
+        }
+    }
 
     private void Start()
     {
-        length = 28;
-        height= 20;
-        nbMine = 100;
-        score = 0;
+        length = 56;
+        height= 40;
+        nbMine = 350;
         
+        InitGame();
+    }
+
+    public void InitGame()
+    {
+        score = 0;
         cells = new List<List<GameObject>>();
+        mineIndex = new List<int>();
         InitGamePanel();
         float cellSize = ComputeCellSize();
+
+        GameObject oldParent = GameObject.Find("CellsParent");
+        if(oldParent != null)
+        {
+            Destroy(oldParent);
+        }
+
+        GameObject cellsParent = new GameObject("CellsParent");
         for (int i = 0; i < length; i++)
         {
             cells.Add(new List<GameObject>());
             for (int j = 0; j < height; j++)
             {
                 GameObject newCell = Instantiate(cellPrefab);
-                newCell.transform.position = gamePanel.transform.position + new Vector3((i + 0.5f - (length/2.0f)) * cellSize, (j + 0.5f - (height/2.0f)) * cellSize, 0);
+                newCell.transform.position = gamePanel.transform.position + new Vector3((i + 0.5f - (length / 2.0f)) * cellSize, (j + 0.5f - (height / 2.0f)) * cellSize, 0);
                 newCell.transform.localScale = cellSize * Vector3.one;
+                newCell.transform.parent = cellsParent.transform;
                 CellBehaviour cellBehaviour = newCell.GetComponent<CellBehaviour>();
                 cellBehaviour.isMine = false;
                 cellBehaviour.value = 0;
@@ -44,9 +72,9 @@ public class MainManager : MonoBehaviour
             }
         }
 
-        for(int m=0; m<nbMine; m++)
+        for (int m = 0; m < nbMine; m++)
         {
-            int newIndex = Random.Range(0, length*height);
+            int newIndex = Random.Range(0, length * height);
             while (mineIndex.Contains(newIndex))
             {
                 newIndex = (newIndex + 1) % (length * height);
@@ -59,7 +87,7 @@ public class MainManager : MonoBehaviour
             if (newCol < length - 1)
             {
                 cells[newCol + 1][newLine].GetComponent<CellBehaviour>().value += 1;
-                if(newLine < height - 1)
+                if (newLine < height - 1)
                 {
                     cells[newCol + 1][newLine + 1].GetComponent<CellBehaviour>().value += 1;
                 }
@@ -109,7 +137,7 @@ public class MainManager : MonoBehaviour
         return Mathf.Min(maxLength, maxHeight);
     }
 
-    public static void ShowAllMines()
+    public void ShowAllMines()
     {
         Sprite bombSprite = Resources.Load<Sprite>("Sprites/bomb");
         for (int i = 0; i < length; i++)

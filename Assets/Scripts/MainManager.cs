@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
@@ -11,12 +12,25 @@ public class MainManager : MonoBehaviour
     public int height;
     public int nbMine;
     public int score;
+    public int difficulty;
 
     public GameObject cellPrefab;
     public GameObject gamePanel;
+    public Image difficultyLabel;
+    public GameObject widthInput;
+    public GameObject heightInput;
+    public GameObject minesInput;
+    public Text timerText;
+    public GameObject winMsg;
+    public GameObject looseMsg;
+
 
     public List<List<GameObject>> cells;
     private List<int> mineIndex;
+    public bool bombSpawned;
+
+    private float timer;
+    public bool gameOver;
 
     private void Awake()
     {
@@ -32,18 +46,43 @@ public class MainManager : MonoBehaviour
 
     private void Start()
     {
-        length = 56;
-        height= 40;
-        nbMine = 350;
-        
+        length = 14;
+        height= 10;
+        nbMine = 25;
+        difficulty = 0;
+        widthInput.transform.GetChild(0).GetComponent<InputField>().text = length.ToString();
+        heightInput.transform.GetChild(0).GetComponent<InputField>().text = height.ToString();
+        minesInput.transform.GetChild(0).GetComponent<InputField>().text = nbMine.ToString();
+        SetDifficulty(0);
+        winMsg.SetActive(false);
+        looseMsg.SetActive(false);
+        gameOver = false;
+
         InitGame();
+    }
+
+    private void Update()
+    {
+        if (!bombSpawned)
+        {
+            timerText.text = "-";
+        }
+        else if(!gameOver)
+        {
+            timerText.text = ((int)(Time.time - timer)).ToString();
+        }
     }
 
     public void InitGame()
     {
+        winMsg.SetActive(false);
+        looseMsg.SetActive(false);
+        gameOver = false;
         score = 0;
+        timer = Time.time;
         cells = new List<List<GameObject>>();
         mineIndex = new List<int>();
+        bombSpawned = false;
         InitGamePanel();
         float cellSize = ComputeCellSize();
 
@@ -71,17 +110,29 @@ public class MainManager : MonoBehaviour
                 cells[i].Add(newCell);
             }
         }
+    }
 
+    public void SpawnBombs(int i, int j)
+    {
+        bombSpawned = true;
         for (int m = 0; m < nbMine; m++)
         {
             int newIndex = Random.Range(0, length * height);
-            while (mineIndex.Contains(newIndex))
+            while (mineIndex.Contains(newIndex) || (Mathf.Abs((newIndex / height) - i) <= 1 && Mathf.Abs((newIndex % height) - j) <= 1))
             {
-                newIndex = (newIndex + 1) % (length * height);
+                if((((newIndex / height) - i) <= 1 && ((newIndex % height) - j) <= 1))
+                {
+                    newIndex = Random.Range(0, length * height);
+                }
+                else
+                {
+                    newIndex = (newIndex + 1) % (length * height);
+                }
             }
             mineIndex.Add(newIndex);
             int newCol = newIndex / height;
             int newLine = newIndex % height;
+
             cells[newCol][newLine].GetComponent<CellBehaviour>().isMine = true;
 
             if (newCol < length - 1)
@@ -137,9 +188,72 @@ public class MainManager : MonoBehaviour
         return Mathf.Min(maxLength, maxHeight);
     }
 
+    public void ChangeDifficulty(int dir)
+    {
+        difficulty = (difficulty + dir + 4) % 4;
+        SetDifficulty(difficulty);
+    }
+
+    public void SetDifficulty(int diff) 
+    {
+        difficulty = diff;
+        switch (difficulty)
+        {
+            case 0:
+                length = 14;
+                height = 10;
+                nbMine = 25;
+                difficultyLabel.sprite = Resources.Load<Sprite>("Sprites/EasyLabel");
+                break;
+            case 1:
+                length = 28;
+                height = 20;
+                nbMine = 90;
+                difficultyLabel.sprite = Resources.Load<Sprite>("Sprites/MediumLabel");
+                break;
+            case 2:
+                length = 56;
+                height = 40;
+                nbMine = 390;
+                difficultyLabel.sprite = Resources.Load<Sprite>("Sprites/HardLabel");
+                break;
+            case 3:
+                SetValuesFromFields();
+                difficultyLabel.sprite = Resources.Load<Sprite>("Sprites/CustomLabel");
+                break;
+        }
+
+        widthInput.SetActive((difficulty == 3));
+        heightInput.SetActive((difficulty == 3));
+        minesInput.SetActive((difficulty == 3));
+
+        InitGame();
+    }
+
+    public void OnTextFieldChange()
+    {
+        if(difficulty== 3)
+        {
+            SetValuesFromFields();
+            InitGame();
+        }
+    }
+
+    public void SetValuesFromFields()
+    {
+        if (!string.IsNullOrEmpty(widthInput.transform.GetChild(0).GetComponent<InputField>().text) && !string.IsNullOrEmpty(heightInput.transform.GetChild(0).GetComponent<InputField>().text) && !string.IsNullOrEmpty(minesInput.transform.GetChild(0).GetComponent<InputField>().text))
+        {
+            length = int.Parse(widthInput.transform.GetChild(0).GetComponent<InputField>().text);
+            height = int.Parse(heightInput.transform.GetChild(0).GetComponent<InputField>().text);
+            nbMine = int.Parse(minesInput.transform.GetChild(0).GetComponent<InputField>().text);
+            nbMine = Mathf.Min(nbMine, height * length - Mathf.Min(3, height) * Mathf.Min(3, length));
+            minesInput.transform.GetChild(0).GetComponent<InputField>().text = nbMine.ToString();
+        }
+    }
+
     public void ShowAllMines()
     {
-        Sprite bombSprite = Resources.Load<Sprite>("Sprites/bomb");
+        Sprite bombSprite = Resources.Load<Sprite>("Sprites/bomb2");
         for (int i = 0; i < length; i++)
         {
             for (int j = 0; j < height; j++)
@@ -157,6 +271,18 @@ public class MainManager : MonoBehaviour
                 } 
             }
         }
+    }
+
+    public void Win()
+    {
+        gameOver = true;
+        winMsg.SetActive(true);
+    }
+
+    public void Loose()
+    {
+        gameOver = true;
+        looseMsg.SetActive(true);
     }
 
 }

@@ -32,7 +32,11 @@ public class CellBehaviour : MonoBehaviour
         {
             if(!isFlagged)
             {
-                if(Time.time - timer < 0.2f)
+                if (!MainManager.Instance.bombSpawned)
+                {
+                    MainManager.Instance.SpawnBombs(column, line);
+                }
+                if (Time.time - timer < 0.2f)
                 {
                     RevealNeighboursAndCheck();
                 }
@@ -42,6 +46,7 @@ public class CellBehaviour : MonoBehaviour
                 {
                     Debug.Log("GAME OVER");
                     MainManager.Instance.ShowAllMines();
+                    MainManager.Instance.Loose();
                 }
                 else
                 {
@@ -94,6 +99,7 @@ public class CellBehaviour : MonoBehaviour
                 if (MainManager.Instance.score >= MainManager.Instance.length * MainManager.Instance.height - MainManager.Instance.nbMine)
                 {
                     Debug.Log("You Win ! Congratulation !");
+                    MainManager.Instance.Win();
                 }
             }
         }
